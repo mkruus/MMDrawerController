@@ -39,7 +39,7 @@ CGFloat const MMDrawerDefaultShadowOpacity = 0.8;
 
 NSTimeInterval const MMDrawerMinimumAnimationDuration = 0.15f;
 
-CGFloat const MMDrawerBezelRange = 20.0f;
+CGFloat const MMDrawerBezelRange = 80.0f;
 
 CGFloat const MMDrawerPanVelocityXAnimationThreshold = 200.0f;
 
@@ -300,6 +300,11 @@ static NSString *MMDrawerOpenSideKey = @"MMDrawerOpenSide";
              [self setNeedsStatusBarAppearanceUpdateIfSupported];
              [self.centerContainerView setFrame:newFrame];
              [self updateDrawerVisualStateForDrawerSide:visibleSide percentVisible:0.0];
+             
+             if (self.shouldPanStatusBar)
+             {
+                 [self setStatusBarViewXOffset:0.0];
+             }
          }
          completion:^(BOOL finished) {
              [sideDrawerViewController endAppearanceTransition];
@@ -359,6 +364,11 @@ static NSString *MMDrawerOpenSideKey = @"MMDrawerOpenSide";
                  [self setNeedsStatusBarAppearanceUpdateIfSupported];
                  [self.centerContainerView setFrame:newFrame];
                  [self updateDrawerVisualStateForDrawerSide:drawerSide percentVisible:1.0];
+                 
+                 if (self.shouldPanStatusBar)
+                 {
+                     [self setStatusBarViewXOffset:CGRectGetMinX(newFrame)];
+                 }
              }
              completion:^(BOOL finished) {
                  //End the appearance transition if it already wasn't open.
@@ -491,6 +501,10 @@ static NSString *MMDrawerOpenSideKey = @"MMDrawerOpenSide";
          animations:^{
              [self.centerContainerView setFrame:newCenterRect];
              [sideDrawerViewController.view setFrame:self.childControllerContainerView.bounds];
+             if (self.shouldPanStatusBar)
+             {
+                 [self setStatusBarViewXOffset:CGRectGetMinX(newCenterRect)];
+             }
          }
          completion:^(BOOL finished) {
 
@@ -510,6 +524,10 @@ static NSString *MMDrawerOpenSideKey = @"MMDrawerOpenSide";
              animations:^{
                  [self.centerContainerView setFrame:self.childControllerContainerView.bounds];
                  [self updateDrawerVisualStateForDrawerSide:self.openSide percentVisible:0.0];
+                 if (self.shouldPanStatusBar)
+                 {
+                     [self setStatusBarViewXOffset:0.0];
+                 }
              }
              completion:^(BOOL finished) {
                  if (forwardAppearanceMethodsToCenterViewController) {
@@ -864,6 +882,12 @@ static NSString *MMDrawerOpenSideKey = @"MMDrawerOpenSide";
     [self.dummyStatusBarView setBackgroundColor:_statusBarViewBackgroundColor];
 }
 
+- (void)setStatusBarViewXOffset:(CGFloat)xOffset
+{
+        UIView *statusBarView = [[UIApplication sharedApplication] valueForKey:[@[@"status", @"Bar"] componentsJoinedByString:@""]];
+        statusBarView.transform = CGAffineTransformMakeTranslation(xOffset, 0.0f);
+}
+
 #pragma mark - Getters
 -(CGFloat)maximumLeftDrawerWidth{
     if(self.leftDrawerViewController){
@@ -965,6 +989,12 @@ static NSString *MMDrawerOpenSideKey = @"MMDrawerOpenSide";
             newFrame.origin.x = [self roundedOriginXForDrawerConstriants:CGRectGetMinX(self.startingPanRect)+translatedPoint.x];
             newFrame = CGRectIntegral(newFrame);
             CGFloat xOffset = newFrame.origin.x;
+            
+            if (self.shouldPanStatusBar)
+            {
+                [self setStatusBarViewXOffset:xOffset];
+            }
+        
             
             MMDrawerSide visibleSide = MMDrawerSideNone;
             CGFloat percentVisible = 0.0;
